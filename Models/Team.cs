@@ -1,4 +1,6 @@
-﻿namespace DashboardAPI.Models
+﻿using System.Collections.Generic;
+
+namespace DashboardAPI.Models
 {
     public class Team
     {
@@ -6,6 +8,6 @@
         public string Name { get; set; }
         public string Description { get; set; }
         public string LicensePlate { get; set; }
-        public int IdOrder { get; set; }
+        public List<Order> Order { get; set; }
     }
 }

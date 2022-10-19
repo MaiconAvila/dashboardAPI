@@ -3,14 +3,16 @@ using System;
 using DashboardAPI.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace DashboardAPI.Migrations
 {
     [DbContext(typeof(DashboardContext))]
-    partial class DashboardContextModelSnapshot : ModelSnapshot
+    [Migration("20221018010556_ChangeModelOrder")]
+    partial class ChangeModelOrder
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -48,20 +50,9 @@ namespace DashboardAPI.Migrations
                     b.Property<int?>("DemandId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("IdTeam")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("NameTeam")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("TeamId")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("Id");
 
                     b.HasIndex("DemandId");
-
-                    b.HasIndex("TeamId");
 
                     b.ToTable("Order");
                 });
@@ -116,15 +107,26 @@ namespace DashboardAPI.Migrations
                     b.ToTable("Team");
                 });
 
+            modelBuilder.Entity("OrderTeam", b =>
+                {
+                    b.Property<int>("OrderId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TeamId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("OrderId", "TeamId");
+
+                    b.HasIndex("TeamId");
+
+                    b.ToTable("OrderTeam");
+                });
+
             modelBuilder.Entity("DashboardAPI.Models.Order", b =>
                 {
                     b.HasOne("DashboardAPI.Models.Demand", null)
                         .WithMany("Order")
                         .HasForeignKey("DemandId");
-
-                    b.HasOne("DashboardAPI.Models.Team", null)
-                        .WithMany("Order")
-                        .HasForeignKey("TeamId");
                 });
 
             modelBuilder.Entity("DashboardAPI.Models.Product", b =>
@@ -141,6 +143,21 @@ namespace DashboardAPI.Migrations
                         .HasForeignKey("DemandId");
                 });
 
+            modelBuilder.Entity("OrderTeam", b =>
+                {
+                    b.HasOne("DashboardAPI.Models.Order", null)
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DashboardAPI.Models.Team", null)
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("DashboardAPI.Models.Demand", b =>
                 {
                     b.Navigation("Order");
@@ -151,11 +168,6 @@ namespace DashboardAPI.Migrations
             modelBuilder.Entity("DashboardAPI.Models.Order", b =>
                 {
                     b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("DashboardAPI.Models.Team", b =>
-                {
-                    b.Navigation("Order");
                 });
 #pragma warning restore 612, 618
         }

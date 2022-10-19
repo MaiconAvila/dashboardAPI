@@ -31,6 +31,8 @@ namespace DashboardAPI.Controllers
             var total = await context.Team.CountAsync();
             var allItems = await context
                 .Team
+                .Include(x => x.Order)
+                .ThenInclude(x => x.Product)
                 .AsNoTracking()
                 .Skip(skip)
                 .Take(take)
@@ -65,16 +67,29 @@ namespace DashboardAPI.Controllers
                 return BadRequest();
             }
 
-            findTeam.Id = findTeam.Id;
-            findTeam.Name = team.Name != null ? team.Name : findTeam.Name;
-            findTeam.Description = team.Description != null ? team.Description : findTeam.Description;
-            findTeam.LicensePlate = team.LicensePlate != null ? team.LicensePlate : findTeam.LicensePlate;
-            findTeam.IdOrder = team.IdOrder != 0 ? team.IdOrder : findTeam.IdOrder;
-
-            context.Team.Update(findTeam);
-
             try
             {
+                findTeam.Id = findTeam.Id;
+                findTeam.Name = team.Name != null ? team.Name : findTeam.Name;
+                findTeam.Description = team.Description != null ? team.Description : findTeam.Description;
+                findTeam.LicensePlate = team.LicensePlate != null ? team.LicensePlate : findTeam.LicensePlate;
+                findTeam.Order = team.Order != null ? (List<Order>)team.Order.Select(x => new Order
+                {
+                    Address = x.Address,
+                    CreateAt = x.CreateAt,
+                    DeliveryDate = x.DeliveryDate,
+                    IdTeam = findTeam.Id,
+                    NameTeam = team.Name != null ? team.Name : findTeam.Name,
+                    Product = x.Product.Select(i => new Product
+                    {
+                        Name = i.Name,
+                        Description = i.Description,
+                        Value = i.Value
+                    }).ToList(),
+                    
+                }).ToList() : findTeam.Order;
+
+                context.Team.Update(findTeam);
                 await context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)

@@ -1,6 +1,8 @@
 using DashboardAPI.Context;
+using DashboardAPI.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -28,8 +30,6 @@ namespace DashboardAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
-            services.AddControllers();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "DashboardAPI", Version = "v1" });
@@ -39,6 +39,38 @@ namespace DashboardAPI
                 options.UseSqlite(
                     Configuration.GetConnectionString("Connection"))
                 );
+
+            services.AddHttpContextAccessor();
+            services.AddSingleton<IUriService>(o =>
+            {
+                var accessor = o.GetRequiredService<IHttpContextAccessor>();
+                var request = accessor.HttpContext.Request;
+                var uri = string.Concat(request.Scheme, "://", request.Host.ToUriComponent());
+                return new UriService(uri);
+            });
+
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(
+                    builder =>
+                    {
+                        builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+                    });
+                options.AddPolicy("localhost", builder =>
+                {
+                    builder.WithOrigins("http://localhost:3000/");
+                });
+                options.AddPolicy("localhost2", builder =>
+                {
+                    builder.WithOrigins("https://localhost:3000/");
+                });
+                options.AddPolicy("site", builder =>
+                {
+                    builder.WithOrigins("https://dashboardv1.netlify.app/");
+                });
+            });
+
+            services.AddControllers();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -55,6 +87,7 @@ namespace DashboardAPI
             app.UseHttpsRedirection();
 
             app.UseRouting();
+            app.UseCors();
 
             app.UseAuthorization();
 

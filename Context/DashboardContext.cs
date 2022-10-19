@@ -12,14 +12,13 @@ namespace DashboardAPI.Context
         }
 
         public IConfiguration Configuration { get; }
-
-        //public DashboardContext(DbContextOptions<DashboardContext> options) : base(options) { }
         public DbSet<Models.Product> Product { get; set; }
         public DbSet<Models.Order> Order { get; set; }
         public DbSet<Models.Demand> Demand { get; set; }
         public DbSet<Models.Team> Team { get; set; }
-        protected override void OnConfiguring(
-            DbContextOptionsBuilder optionsBuilder)
-            => optionsBuilder.UseSqlite(connectionString: Configuration.GetConnectionString("Connection"));
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+            {
+                optionsBuilder.UseSqlite(connectionString: Configuration.GetConnectionString("Connection"));
+            }
     }
 }

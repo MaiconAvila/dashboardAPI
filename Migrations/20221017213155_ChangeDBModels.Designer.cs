@@ -3,14 +3,16 @@ using System;
 using DashboardAPI.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace DashboardAPI.Migrations
 {
     [DbContext(typeof(DashboardContext))]
-    partial class DashboardContextModelSnapshot : ModelSnapshot
+    [Migration("20221017213155_ChangeDBModels")]
+    partial class ChangeDBModels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -47,12 +49,6 @@ namespace DashboardAPI.Migrations
 
                     b.Property<int?>("DemandId")
                         .HasColumnType("INTEGER");
-
-                    b.Property<int>("IdTeam")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("NameTeam")
-                        .HasColumnType("TEXT");
 
                     b.Property<int?>("TeamId")
                         .HasColumnType("INTEGER");

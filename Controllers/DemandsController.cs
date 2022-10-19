@@ -31,6 +31,8 @@ namespace DashboardAPI.Controllers
             var total = await context.Demand.CountAsync();
             var allItems = await context
                 .Demand
+                .Include(x => x.Order)
+                .Include(x => x.Team)
                 .AsNoTracking()
                 .Skip(skip)
                 .Take(take)

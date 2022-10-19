@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DashboardAPI.Context;
 using DashboardAPI.Models;
+using DashboardAPI.Wrappers;
+using DashboardAPI.Services;
+using System.Data;
 
 namespace DashboardAPI.Controllers
 {
@@ -15,28 +17,33 @@ namespace DashboardAPI.Controllers
     public class OrdersController : ControllerBase
     {
         private readonly DashboardContext _context;
+        private readonly IUriService uriService;
 
-        public OrdersController(DashboardContext context)
+        public OrdersController(DashboardContext context, IUriService uriService)
         {
             _context = context;
+            this.uriService = uriService;
         }
 
         // GET: api/Orders
-        [HttpGet("{skip:int}/{take:int}")]
+        [HttpGet]
         public async Task<IActionResult> GetOrder(
-            [FromServices] DashboardContext context,
-            int skip = 0,
-            int take = 20)
+            [FromServices] DashboardContext context, [FromQuery] PaginationFilter filter)
         {
-            var total = await context.Order.CountAsync();
+            var route = Request.Path.Value;
+            var validFilter = new PaginationFilter(filter.PageNumber, filter.PageSize);
             var allItems = await context
                 .Order
+                .Include(x => x.Product)
+                .Skip((validFilter.PageNumber - 1) * validFilter.PageSize)
+                .Take(validFilter.PageSize)
                 .AsNoTracking()
-                .Skip(skip)
-                .Take(take)
                 .ToListAsync();
 
-            return Ok(new { total, skip, take, allItems });
+            var total = await context.Order.CountAsync();
+            var pagedReponse = PaginationHelper.CreatePagedReponse<Order>(allItems, validFilter, total, uriService, route);
+
+            return Ok(pagedReponse);
         }
 
         // GET: api/Orders/5
@@ -50,7 +57,7 @@ namespace DashboardAPI.Controllers
                 return NotFound();
             }
 
-            return order;
+            return Ok(new Response<Order>(order));
         }
 
         // PUT: api/Orders/5
@@ -64,11 +71,14 @@ namespace DashboardAPI.Controllers
                 return BadRequest();
             }
 
-            findOrder.Id = findOrder.Id;
-            findOrder.CreateAt = findOrder.CreateAt;
-            findOrder.DeliveryDate = findOrder.DeliveryDate;
             findOrder.Address = order.Address != null ? order.Address : findOrder.Address;
-            findOrder.IdProduct = order.IdProduct != 0 ? order.IdProduct : findOrder.IdProduct;
+            findOrder.DeliveryDate = findOrder.DeliveryDate;
+            findOrder.Product = findOrder.Product = order.Product != null ? (List<Product>)order.Product.Select(x => new Product
+            {
+                Name = x.Name,
+                Description = x.Description,
+                Value = x.Value
+            }).ToList(): findOrder.Product;
 
             context.Entry(findOrder).State = EntityState.Modified;
 
