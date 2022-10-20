@@ -46,11 +46,26 @@ namespace DashboardAPI.Controllers
             return Ok(pagedReponse);
         }
 
+        // GET: api/Orders/DataGraphic
+        [HttpGet("DataGraphic")]
+        public async Task<IActionResult> GetDataGraphicOrder(
+            [FromServices] DashboardContext context)
+        {
+            var items = await context.Order.ToListAsync();
+            var data = items.GroupBy(x => x.NameTeam);
+
+            return Ok(data);
+        }
+
         // GET: api/Orders/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Order>> GetOrder(int id)
         {
-            var order = await _context.Order.FindAsync(id);
+            var order = await _context
+                .Order
+                .Include(x => x.Product)
+                .Where(x => x.Id.Equals(id))
+                .FirstOrDefaultAsync();
 
             if (order == null)
             {
@@ -65,13 +80,20 @@ namespace DashboardAPI.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutOrder(int id, [FromBody] Order order, [FromServices] DashboardContext context)
         {
-            var findOrder = await context.Order.FirstOrDefaultAsync(x => x.Id == id);
+            var findOrder = await context
+                .Order
+                .Include(x => x.Product)
+                .Where(x => x.Id.Equals(id))
+                .FirstOrDefaultAsync();
+
             if (findOrder == null)
             {
                 return BadRequest();
             }
 
             findOrder.Address = order.Address != null ? order.Address : findOrder.Address;
+            findOrder.IdTeam = order.IdTeam != 0 ? order.IdTeam : findOrder.IdTeam;
+            findOrder.NameTeam = order.NameTeam != null ? order.NameTeam : findOrder.NameTeam;
             findOrder.DeliveryDate = findOrder.DeliveryDate;
             findOrder.Product = findOrder.Product = order.Product != null ? (List<Product>)order.Product.Select(x => new Product
             {
@@ -116,7 +138,12 @@ namespace DashboardAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteOrder(int id)
         {
-            var order = await _context.Order.FindAsync(id);
+            var order = await _context
+                .Order
+                .Include(x => x.Product)
+                .Where(x => x.Id.Equals(id))
+                .FirstOrDefaultAsync();
+
             if (order == null)
             {
                 return NotFound();
