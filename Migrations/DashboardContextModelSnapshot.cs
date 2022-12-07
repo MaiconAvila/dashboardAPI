@@ -54,19 +54,34 @@ namespace DashboardAPI.Migrations
                     b.Property<string>("NameTeam")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("TeamId")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("Id");
 
                     b.HasIndex("DemandId");
-
-                    b.HasIndex("TeamId");
 
                     b.ToTable("Order");
                 });
 
             modelBuilder.Entity("DashboardAPI.Models.Product", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Value")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Product");
+                });
+
+            modelBuilder.Entity("DashboardAPI.Models.ProductOrder", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -88,7 +103,7 @@ namespace DashboardAPI.Migrations
 
                     b.HasIndex("OrderId");
 
-                    b.ToTable("Product");
+                    b.ToTable("ProductOrder");
                 });
 
             modelBuilder.Entity("DashboardAPI.Models.Team", b =>
@@ -121,13 +136,9 @@ namespace DashboardAPI.Migrations
                     b.HasOne("DashboardAPI.Models.Demand", null)
                         .WithMany("Order")
                         .HasForeignKey("DemandId");
-
-                    b.HasOne("DashboardAPI.Models.Team", null)
-                        .WithMany("Order")
-                        .HasForeignKey("TeamId");
                 });
 
-            modelBuilder.Entity("DashboardAPI.Models.Product", b =>
+            modelBuilder.Entity("DashboardAPI.Models.ProductOrder", b =>
                 {
                     b.HasOne("DashboardAPI.Models.Order", null)
                         .WithMany("Product")
@@ -151,11 +162,6 @@ namespace DashboardAPI.Migrations
             modelBuilder.Entity("DashboardAPI.Models.Order", b =>
                 {
                     b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("DashboardAPI.Models.Team", b =>
-                {
-                    b.Navigation("Order");
                 });
 #pragma warning restore 612, 618
         }

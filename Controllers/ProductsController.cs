@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DashboardAPI.Context;
 using DashboardAPI.Models;
+using DashboardAPI.Services;
+using DashboardAPI.Wrappers;
 
 namespace DashboardAPI.Controllers
 {
@@ -15,42 +17,60 @@ namespace DashboardAPI.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly DashboardContext _context;
+        private readonly IUriService uriService;
 
-        public ProductsController(DashboardContext context)
+        public ProductsController(DashboardContext context, IUriService uriService)
         {
             _context = context;
+            this.uriService = uriService;
         }
 
         // GET: api/Products
-        [HttpGet("{skip:int}/{take:int}")]
+        [HttpGet]
         public async Task<ActionResult> GetProduct(
-            [FromServices] DashboardContext context,
-            int skip = 0,
-            int take = 20)
+            [FromServices] DashboardContext context, [FromQuery] PaginationFilter filter)
         {
-            var total = await context.Product.CountAsync();
+            var route = Request.Path.Value;
+            var validFilter = new PaginationFilter(filter.PageNumber, filter.PageSize);
             var allItems = await context
                 .Product
+                .Skip((validFilter.PageNumber - 1) * validFilter.PageSize)
+                .Take(validFilter.PageSize)
                 .AsNoTracking()
-                .Skip(skip)
-                .Take(take)
                 .ToListAsync();
 
-            return Ok(new { total, skip, take, allItems });
+            var total = await context.Product.CountAsync();
+            var pagedReponse = PaginationHelper.CreatePagedReponse(allItems, validFilter, total, uriService, route);
+
+            return Ok(pagedReponse);
+        }
+
+        // GET: api/Teams/Total
+        [HttpGet("Total")]
+        public async Task<IActionResult> GetTotalProducts(
+            [FromServices] DashboardContext context)
+        {
+            var items = await context.Product
+                .AsNoTracking()
+                .ToListAsync();
+
+            return Ok(items);
         }
 
         // GET: api/Products/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(int id)
         {
-            var product = await _context.Product.FindAsync(id);
+            var product = await _context
+                .Product
+                .FindAsync(id);
 
             if (product == null)
             {
                 return NotFound();
             }
 
-            return product;
+            return Ok(new Response<Product>(product));
         }
 
         // PUT: api/Products/5
@@ -58,21 +78,23 @@ namespace DashboardAPI.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutProduct(int id, [FromBody] Product product, [FromServices] DashboardContext context)
         {
-            var findProduct = await context.Product.FirstOrDefaultAsync(x => x.Id == id);
+            var findProduct = await context
+                .Product
+                .FirstOrDefaultAsync(x => x.Id == id);
             if (findProduct == null)
             {
                 return BadRequest();
             }
 
-            findProduct.Id = findProduct.Id;
-            findProduct.Name = product.Name != null ? product.Name : findProduct.Name;
-            findProduct.Description = product.Description != null ? product.Description : findProduct.Description;
-            findProduct.Value = product.Value != 0 ? product.Value : findProduct.Value;
-
-            context.Entry(findProduct).State = EntityState.Modified;
 
             try
             {
+                findProduct.Id = findProduct.Id;
+                findProduct.Name = product.Name != null ? product.Name : findProduct.Name;
+                findProduct.Description = product.Description != null ? product.Description : findProduct.Description;
+                findProduct.Value = product.Value != 0 ? product.Value : findProduct.Value;
+
+                context.Entry(findProduct).State = EntityState.Modified;
                 await context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
@@ -105,7 +127,10 @@ namespace DashboardAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
-            var product = await _context.Product.FindAsync(id);
+            var product = await _context
+                .Product
+                .FindAsync(id);
+
             if (product == null)
             {
                 return NotFound();

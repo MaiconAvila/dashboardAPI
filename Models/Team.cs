@@ -8,6 +8,5 @@ namespace DashboardAPI.Models
         public string Name { get; set; }
         public string Description { get; set; }
         public string LicensePlate { get; set; }
-        public List<Order> Order { get; set; }
     }
 }

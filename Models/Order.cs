@@ -9,8 +9,16 @@ namespace DashboardAPI.Models
         public DateTime? CreateAt { get; set; } = DateTime.Now;
         public DateTime DeliveryDate { get; set; }
         public string Address { get; set; }
-        public List<Product> Product { get; set; }
+        public List<ProductOrder> Product { get; set; }
         public int IdTeam { get; set; }
         public string NameTeam { get; set; }
+    }
+
+    public class ProductOrder
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public decimal Value { get; set; }
     }
 }

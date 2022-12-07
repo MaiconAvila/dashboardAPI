@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DashboardAPI.Context;
 using DashboardAPI.Models;
+using DashboardAPI.Services;
+using DashboardAPI.Wrappers;
 
 namespace DashboardAPI.Controllers
 {
@@ -15,44 +17,59 @@ namespace DashboardAPI.Controllers
     public class TeamsController : ControllerBase
     {
         private readonly DashboardContext _context;
+        private readonly IUriService uriService;
 
-        public TeamsController(DashboardContext context)
+        public TeamsController(DashboardContext context, IUriService uriService)
         {
             _context = context;
+            this.uriService = uriService;
         }
 
         // GET: api/Teams
-        [HttpGet("{skip:int}/{take:int}")]
+        [HttpGet]
         public async Task<IActionResult> GetTeam(
-            [FromServices] DashboardContext context,
-            int skip = 0,
-            int take = 20)
+            [FromServices] DashboardContext context, [FromQuery] PaginationFilter filter)
         {
-            var total = await context.Team.CountAsync();
+            var route = Request.Path.Value;
+            var validFilter = new PaginationFilter(filter.PageNumber, filter.PageSize);
             var allItems = await context
-                .Team
-                .Include(x => x.Order)
-                .ThenInclude(x => x.Product)
+                .Team                
+                .Skip((validFilter.PageNumber - 1) * validFilter.PageSize)
+                .Take(validFilter.PageSize)
                 .AsNoTracking()
-                .Skip(skip)
-                .Take(take)
                 .ToListAsync();
 
-            return Ok(new { total, skip, take, allItems });
+            var total = await context.Team.CountAsync();
+            var pagedReponse = PaginationHelper.CreatePagedReponse(allItems, validFilter, total, uriService, route);
+            
+            return Ok(pagedReponse);
+        }
+
+        // GET: api/Teams/Total
+        [HttpGet("Total")]
+        public async Task<IActionResult> GetTotalTeams(
+            [FromServices] DashboardContext context)
+        {
+            var items = await context.Team
+                .ToListAsync();
+
+            return Ok(items);
         }
 
         // GET: api/Teams/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Team>> GetTeam(int id)
         {
-            var team = await _context.Team.FindAsync(id);
+            var team = await _context
+                .Team
+                .FindAsync(id);
 
             if (team == null)
             {
                 return NotFound();
             }
 
-            return team;
+            return Ok(new Response<Team>(team));
         }
 
         // PUT: api/Teams/5
@@ -61,7 +78,9 @@ namespace DashboardAPI.Controllers
         public async Task<IActionResult> PutTeam(int id, [FromBody] Team team, 
             [FromServices] DashboardContext context)
         {
-            var findTeam = await context.Team.FirstOrDefaultAsync(x => x.Id == id);
+            var findTeam = await context
+                .Team
+                .FirstOrDefaultAsync(x => x.Id == id);
             if (findTeam == null)
             {
                 return BadRequest();
@@ -73,21 +92,21 @@ namespace DashboardAPI.Controllers
                 findTeam.Name = team.Name != null ? team.Name : findTeam.Name;
                 findTeam.Description = team.Description != null ? team.Description : findTeam.Description;
                 findTeam.LicensePlate = team.LicensePlate != null ? team.LicensePlate : findTeam.LicensePlate;
-                findTeam.Order = team.Order != null ? (List<Order>)team.Order.Select(x => new Order
-                {
-                    Address = x.Address,
-                    CreateAt = x.CreateAt,
-                    DeliveryDate = x.DeliveryDate,
-                    IdTeam = findTeam.Id,
-                    NameTeam = team.Name != null ? team.Name : findTeam.Name,
-                    Product = x.Product.Select(i => new Product
-                    {
-                        Name = i.Name,
-                        Description = i.Description,
-                        Value = i.Value
-                    }).ToList(),
+                //findTeam.Order = team.Order != null ? (List<Order>)team.Order.Select(x => new Order
+                //{
+                //    Address = x.Address,
+                //    CreateAt = x.CreateAt,
+                //    DeliveryDate = x.DeliveryDate,
+                //    IdTeam = findTeam.Id,
+                //    NameTeam = team.Name != null ? team.Name : findTeam.Name,
+                //    Product = x.Product.Select(i => new Product
+                //    {
+                //        Name = i.Name,
+                //        Description = i.Description,
+                //        Value = i.Value
+                //    }).ToList(),
                     
-                }).ToList() : findTeam.Order;
+                //}).ToList() : findTeam.Order;
 
                 context.Team.Update(findTeam);
                 await context.SaveChangesAsync();
@@ -123,6 +142,7 @@ namespace DashboardAPI.Controllers
         public async Task<IActionResult> DeleteTeam(int id)
         {
             var team = await _context.Team.FindAsync(id);
+
             if (team == null)
             {
                 return NotFound();

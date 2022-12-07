@@ -95,7 +95,7 @@ namespace DashboardAPI.Controllers
             findOrder.IdTeam = order.IdTeam != 0 ? order.IdTeam : findOrder.IdTeam;
             findOrder.NameTeam = order.NameTeam != null ? order.NameTeam : findOrder.NameTeam;
             findOrder.DeliveryDate = findOrder.DeliveryDate;
-            findOrder.Product = findOrder.Product = order.Product != null ? (List<Product>)order.Product.Select(x => new Product
+            findOrder.Product = findOrder.Product = order.Product != null ? order.Product.Select(x => new ProductOrder
             {
                 Name = x.Name,
                 Description = x.Description,
