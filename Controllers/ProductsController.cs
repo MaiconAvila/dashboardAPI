@@ -42,6 +42,11 @@ namespace DashboardAPI.Controllers
             var total = await context.Product.CountAsync();
             var pagedReponse = PaginationHelper.CreatePagedReponse(allItems, validFilter, total, uriService, route);
 
+            if (pagedReponse == null)
+            {
+                return NotFound();
+            }
+
             return Ok(pagedReponse);
         }
 
@@ -53,6 +58,11 @@ namespace DashboardAPI.Controllers
             var items = await context.Product
                 .AsNoTracking()
                 .ToListAsync();
+
+            if (items == null)
+            {
+                return NotFound();
+            }
 
             return Ok(items);
         }
