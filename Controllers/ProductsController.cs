@@ -45,7 +45,7 @@ namespace DashboardAPI.Controllers
             return Ok(pagedReponse);
         }
 
-        // GET: api/Teams/Total
+        // GET: api/Products/Total
         [HttpGet("Total")]
         public async Task<IActionResult> GetTotalProducts(
             [FromServices] DashboardContext context)
