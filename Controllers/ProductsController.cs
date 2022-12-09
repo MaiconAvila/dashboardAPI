@@ -55,13 +55,7 @@ namespace DashboardAPI.Controllers
         public async Task<IActionResult> GetTotalProducts(
             [FromServices] DashboardContext context)
         {
-            var items = await context.Product
-                .ToListAsync();
-
-            if (items == null)
-            {
-                return NotFound();
-            }
+            var items = await context.Product.ToListAsync();
 
             return Ok(items);
         }

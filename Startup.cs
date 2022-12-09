@@ -68,6 +68,10 @@ namespace DashboardAPI
                 {
                     builder.WithOrigins("https://dashboardv1.netlify.app/");
                 });
+                options.AddPolicy("site", builder =>
+                {
+                    builder.WithOrigins("https://dashboardv1.netlify.app/formOrder");
+                });
             });
 
             services.AddControllers();
