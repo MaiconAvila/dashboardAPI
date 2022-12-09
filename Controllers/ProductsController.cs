@@ -56,7 +56,6 @@ namespace DashboardAPI.Controllers
             [FromServices] DashboardContext context)
         {
             var items = await context.Product
-                .AsNoTracking()
                 .ToListAsync();
 
             if (items == null)
